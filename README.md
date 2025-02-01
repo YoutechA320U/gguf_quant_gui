@@ -1,6 +1,6 @@
 ## gguf_quant_gui
 
-ダウンロード済のHuggingFaceのモデルを一定のルールで量子化GGUFに変換するGUIツール。
+ダウンロード済のHuggingFaceのモデルを一定のルールでGGUF量子化するGUIツール。
 
 
 ## 使い方
