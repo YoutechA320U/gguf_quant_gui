@@ -130,8 +130,8 @@ def run_conversion():
             update_status("Error: 必要なllama.cpp関連ファイルが見つかりません")
             messagebox.showerror("Error", " 必要なllama.cpp関連ファイルが見つかりません")
         if os.path.exists(output_quantized):
-           update_status("量子化が完了しました")
-           messagebox.showinfo("Success", "量子化が成功しました")
+           update_status("量子化に成功しました")
+           messagebox.showinfo("Success", "量子化に成功しました")
         if not os.path.exists(output_quantized):
            update_status(f"Error: 量子化に失敗しました ")
            messagebox.showerror("Error", f"量子化に失敗しました:\n量子化のタイプと量子化前のGGUFが正常か確認してください ")
