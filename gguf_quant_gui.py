@@ -12,6 +12,7 @@ quantization_types = [
     "Q5_0", "Q5_1", "Q5_K", "Q5_K_S", "Q5_K_M", "Q6_K", "Q8_0", "IQ1_S", "IQ1_M", "IQ2_XXS", "IQ2_XS",
     "IQ2_S", "IQ2_M", "IQ3_XXS", "IQ3_XS", "IQ3_S", "IQ3_M", "IQ4_XS", "IQ4_NL"
 ]
+error_type=0 #エラー時の処理分岐フラグ
 
 def select_hf_model():
     file_path = filedialog.askdirectory(title="HuggingFaceモデルのディレクトリ")
@@ -43,6 +44,7 @@ def update_status(message):
 
 def run_conversion():
     def _run_conversion():
+        global error_type
         hf_model = hf_model_entry.get()
         imatrix_file = imatrix_entry.get()
         output_gguf = output_gguf_entry.get()
@@ -57,14 +59,13 @@ def run_conversion():
 
         if imatrix_file and not os.path.isfile(imatrix_file):
             update_status("Error: 選択された imatrix データセットファイルが存在しません")
-            messagebox.showerror("Error", "選択された imatrix データセットファイルが存在しません。")
+            messagebox.showerror("Error", "選択された imatrix データセットファイルが存在しません")
             return
         
         if not os.path.exists(output_imatrix) and quantization_type in["IQ1_S", "IQ1_M", "IQ2_XXS", "IQ2_XS","IQ2_S", "IQ2_M", "IQ3_XXS", "IQ3_S", "IQ3_M", "IQ3_XS", "IQ4_NL", "IQ4_XS"]:
            update_status("Error: imatrix量子化に必要なimatrixファイルが指定されていません")
            messagebox.showerror("Error", "imatrix量子化に必要なimatrixファイルが指定されていません")
            return
-    
         try:
             update_status("HFからBF16 GGUFへ変換しています…")
             # HFからGGUFに変換
@@ -128,20 +129,26 @@ def run_conversion():
                 #messagebox.showinfo("Info", f"{output_quantized} は既に存在します。この処理をスキップします。")
                 pass
         except subprocess.CalledProcessError as e :
+            error_type=1
             update_status(f"Error: プロセスが失敗しました")
             messagebox.showerror("Error", f"プロセスが失敗しました: {e}")
         except FileNotFoundError as e:
+            error_type=1
             update_status("Error: 必要なllama.cpp関連ファイルが見つかりません")
             messagebox.showerror("Error", " 必要なllama.cpp関連ファイルが見つかりません")
         except ValueError as e:
+            error_type=1
             update_status(f"Error: プロセスが失敗しました: {e}")
             messagebox.showerror("Error", f"プロセスが失敗しました:")
-        if os.path.exists(output_quantized) :
+        if os.path.exists(output_quantized) and error_type==0:
            update_status("変換と量子化が完了しました")
            messagebox.showinfo("Success", "変換と量子化が完了しました")
-        if not os.path.exists(output_quantized):
+        if not os.path.exists(output_quantized) or error_type==1:
+           error_type=0
            update_status(f"Error: 変換と量子化に失敗しました ")
-           messagebox.showerror("Error", f"変換と量子化に失敗しました:\n量子化のタイプと量子化前のGGUFが正常か確認してください ")
+           messagebox.showerror("Error", f"変換と量子化に失敗しました:\n各フィールドが正常か確認してください ")
+        if error_type==2:
+           error_type=0
     threading.Thread(target=_run_conversion).start()
 
 process_list = []
@@ -168,11 +175,12 @@ def on_closing():
     root.destroy()
 
 def process_stop():
-    global process_list
+    global process_list, error_type
     if process_list :
      for process in process_list:
          process.terminate()  # すべてのプロセスを強制終了
      process_list = []
+     error_type=2
      update_status(f"Error: 変換と量子化を強制終了しました")
      messagebox.showerror("Error", f"変換と量子化を強制終了しました")
     else:
