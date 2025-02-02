@@ -61,8 +61,8 @@ def run_conversion():
             return
         
         if not os.path.exists(output_imatrix) and quantization_type in["IQ1_S", "IQ1_M", "IQ2_XXS", "IQ2_XS","IQ2_S", "IQ2_M", "IQ3_XXS", "IQ3_S", "IQ3_M", "IQ3_XS", "IQ4_NL", "IQ4_XS"]:
-           update_status("Error: imatrix量子化をに必要なimatrixファイルが指定されていません")
-           messagebox.showerror("Error", "imatrix量子化をに必要なimatrixファイルが指定されていません")
+           update_status("Error: imatrix量子化に必要なimatrixファイルが指定されていません")
+           messagebox.showerror("Error", "imatrix量子化に必要なimatrixファイルが指定されていません")
            return
     
         try:
