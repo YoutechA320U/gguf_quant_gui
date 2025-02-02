@@ -51,15 +51,20 @@ def run_conversion():
         quantization_type = quantization_type_var.get()  # 量子化オプションのリスト選択した値を取得
 
         if not all([output_gguf, output_quantized]) or (imatrix_file and not output_imatrix):
-            update_status("Error: 必要なフィールドを入力してください。")
-            messagebox.showerror("Error", "必要なフィールドを入力してください。")
+            update_status("Error: 必要なフィールドを入力してください")
+            messagebox.showerror("Error", "必要なフィールドを入力してください")
             return
 
         if imatrix_file and not os.path.isfile(imatrix_file):
-            update_status("Error: 選択された imatrix データセットファイルが存在しません。")
+            update_status("Error: 選択された imatrix データセットファイルが存在しません")
             messagebox.showerror("Error", "選択された imatrix データセットファイルが存在しません。")
             return
-
+        
+        if not os.path.exists(output_imatrix) and quantization_type in["IQ1_S", "IQ1_M", "IQ2_XXS", "IQ2_XS","IQ2_S", "IQ2_M", "IQ3_XXS", "IQ3_S", "IQ3_M", "IQ3_XS", "IQ4_NL", "IQ4_XS"]:
+           update_status("Error: imatrix量子化をに必要なimatrixファイルが指定されていません")
+           messagebox.showerror("Error", "imatrix量子化をに必要なimatrixファイルが指定されていません")
+           return
+    
         try:
             update_status("HFからBF16 GGUFへ変換しています…")
             # HFからGGUFに変換
@@ -73,8 +78,9 @@ def run_conversion():
                 )
                 capture_output(process, "HF to GGUF Conversion")
             else:
-                update_status( f"{output_gguf} は既に存在します。この処理をスキップします")
+                #update_status( f"{output_gguf} は既に存在します。この処理をスキップします")
                 #messagebox.showinfo("Info", f"{output_gguf} は既に存在します。この処理をスキップします。")
+                pass
 
             update_status("imatrixの生成をしています…")
             # imatrixの作成（imatrix_fileが提供されている場合のみ）
@@ -88,8 +94,9 @@ def run_conversion():
                 )
                 capture_output(process, "IMatrix Creation")
             elif imatrix_file:
-                update_status(f"{output_imatrix} は既に存在します。この処理をスキップします")
+                #update_status(f"{output_imatrix} は既に存在します。この処理をスキップします")
                 #messagebox.showinfo("Info", f"{output_imatrix} は既に存在します。この処理をスキップします。")
+                pass
 
             update_status(f"モデルを{quantization_type}で量子化しています…")
             # モデルを量子化
@@ -108,47 +115,36 @@ def run_conversion():
                     capture_output(process, "Quantization with imatrix")
                 else:
                     # imatrix不使用のとき
-                    if quantization_type in["IQ1_S", "IQ1_M", "IQ2_XXS", "IQ2_XS","IQ2_S", "IQ2_M", "IQ3_XXS", "IQ3_S", "IQ3_M", "IQ3_XS", "IQ4_NL", "IQ4_XS"]:
-                       update_status("imatrixファイルが指定されていないためimatrix量子化を中止します")
-                       messagebox.showinfo("Info","imatrixファイルが指定されていないためimatrix量子化を中止します")
-                    if quantization_type in["Q2_K", "Q2_K_S", "Q3_K", "Q3_K_S", "Q3_K_M", "Q3_K_L", "Q4_0", "Q4_1", "Q4_K", "Q4_K_S", "Q4_K_M", "Q5_0", "Q5_1", "Q5_K", "Q5_K_S", "Q5_K_M", "Q6_K", "Q8_0"]:
-                     process = subprocess.Popen(
+                    process = subprocess.Popen(
                         [f'{llama_cpp_path}\\llama-quantize', output_gguf, output_quantized, quantization_type],
                         stdout=subprocess.PIPE, 
                         stderr=subprocess.STDOUT, 
                         text=True,
                         encoding='utf-8'  # UTF-8 でエンコード
-                     )
-                     capture_output(process, "Quantization")
+                    )
+                    capture_output(process, "Quantization")
             if  os.path.exists(output_quantized):
-                update_status(f"{output_quantized} は既に存在します。この処理をスキップします")
+                #update_status(f"{output_quantized} は既に存在します。この処理をスキップします")
                 #messagebox.showinfo("Info", f"{output_quantized} は既に存在します。この処理をスキップします。")
+                pass
         except subprocess.CalledProcessError as e :
             update_status(f"Error: プロセスが失敗しました")
             messagebox.showerror("Error", f"プロセスが失敗しました: {e}")
         except FileNotFoundError as e:
             update_status("Error: 必要なllama.cpp関連ファイルが見つかりません")
             messagebox.showerror("Error", " 必要なllama.cpp関連ファイルが見つかりません")
-        if os.path.exists(output_quantized):
-           update_status("量子化に成功しました")
-           messagebox.showinfo("Success", "量子化に成功しました")
+        except ValueError as e:
+            update_status(f"Error: プロセスが失敗しました: {e}")
+            messagebox.showerror("Error", f"プロセスが失敗しました:")
+        if os.path.exists(output_quantized) :
+           update_status("変換と量子化が完了しました")
+           messagebox.showinfo("Success", "変換と量子化が完了しました")
         if not os.path.exists(output_quantized):
-           update_status(f"Error: 量子化に失敗しました ")
-           messagebox.showerror("Error", f"量子化に失敗しました:\n量子化のタイプと量子化前のGGUFが正常か確認してください ")
+           update_status(f"Error: 変換と量子化に失敗しました ")
+           messagebox.showerror("Error", f"変換と量子化に失敗しました:\n量子化のタイプと量子化前のGGUFが正常か確認してください ")
     threading.Thread(target=_run_conversion).start()
 
-def capture_output(process, process_name):
-    while True:
-        output = process.stdout.readline()
-        if output == '' and process.poll() is not None:
-            break
-        if output:
-            print(f"[{process_name}] {output.strip()}")
-    rc = process.poll()
-    return rc
-
 process_list = []
-
 def capture_output(process, process_name):
     process_list.append(process)  # プロセスをリストに追加
     while True:
@@ -157,14 +153,31 @@ def capture_output(process, process_name):
             break
         if output:
             print(f"[{process_name}] {output.strip()}")
+        if output.strip().find("main: failed")!=-1:
+            raise ValueError("process failed")
     rc = process.poll()
-    process_list.remove(process)  # プロセスが終了したらリストから削除
+    try:
+     process_list.remove(process)  # プロセスが終了したらリストから削除
+    except:
+     pass
     return rc
 
 def on_closing():
     for process in process_list:
         process.terminate()  # すべてのプロセスを強制終了
     root.destroy()
+
+def process_stop():
+    global process_list
+    if process_list :
+     for process in process_list:
+         process.terminate()  # すべてのプロセスを強制終了
+     process_list = []
+     update_status(f"Error: 変換と量子化を強制終了しました")
+     messagebox.showerror("Error", f"変換と量子化を強制終了しました")
+    else:
+       pass
+    return
 
 # メインウィンドウの作成
 root = tk.Tk()
@@ -209,6 +222,8 @@ status_label.grid(row=6, column=0, columnspan=3, padx=10, pady=5)
 # 実行ボタン
 run_button = tk.Button(root, text="変換と量子化を実行", command=run_conversion)
 run_button.grid(row=7, column=0, columnspan=3, pady=20)
+stop_button = tk.Button(root, text="量子化を中止", command=process_stop)
+stop_button.grid(row=7, column=2, pady=20)
 
 # WM_DELETE_WINDOW プロトコルのハンドラを設定
 root.protocol("WM_DELETE_WINDOW", on_closing)
