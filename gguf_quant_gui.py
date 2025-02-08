@@ -75,7 +75,7 @@ def run_conversion():
                     stdout=subprocess.PIPE, 
                     stderr=subprocess.STDOUT, 
                     text=True,
-                    encoding='utf-8'  # UTF-8 でエンコード
+                     encoding='cp932'  # cp932 でエンコード
                 )
                 capture_output(process, "HF to GGUF Conversion")
             else:
@@ -138,8 +138,8 @@ def run_conversion():
             messagebox.showerror("Error", " 必要なllama.cpp関連ファイルが見つかりません")
         except ValueError as e:
             error_type=1
-            update_status(f"Error: プロセスが失敗しました: {e}")
-            messagebox.showerror("Error", f"プロセスが失敗しました:")
+            update_status(f"Error: プロセスが失敗しました:")
+            messagebox.showerror("Error", f"プロセスが失敗しました: {e}")
         if os.path.exists(output_quantized) and error_type==0:
            update_status("変換と量子化が完了しました")
            messagebox.showinfo("Success", "変換と量子化が完了しました")
